@@ -12,6 +12,11 @@ import _Context from './context';
 import _history from './history';
 import _util from './util';
 import _notice from '../plugins/modules/_notice';
+import pasteFromWord from 'paste-from-word';
+
+const customPaster = new pasteFromWord({});
+const pastingInitEvent = new Event('pastingInitEvent');
+const pastingEndEvent = new Event('pastingEndEvent');
 
 /**
  * @description SunEditor constuctor function.
@@ -7751,10 +7756,24 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
             return false;
         },
 
+        // onPaste_wysiwyg: function (e) {
+        //     const clipboardData = util.isIE ? _w.clipboardData : e.clipboardData;
+        //     if (!clipboardData) return true;
+        //     return event._dataTransferAction('paste', e, clipboardData);
+        // },
+
         onPaste_wysiwyg: function (e) {
+            document.dispatchEvent(pastingInitEvent)
+            e.preventDefault();
+            e.stopPropagation();
             const clipboardData = util.isIE ? _w.clipboardData : e.clipboardData;
             if (!clipboardData) return true;
-            return event._dataTransferAction('paste', e, clipboardData);
+
+            customPaster.parse(e, function (res) {
+                console.log("USING CUSTOM PARSER");
+                core._wd.execCommand('insertHTML', false, res.html)
+                document.dispatchEvent(pastingEndEvent)
+              });
         },
 
         _setClipboardComponent: function (e, info, clipboardData) {
